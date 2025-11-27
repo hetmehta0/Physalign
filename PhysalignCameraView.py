@@ -498,6 +498,10 @@ class ExerciseFeedback:
         right_hip_depth = joint_angles.get("right_hip_depth", 0)
         avg_hip_depth = (left_hip_depth + right_hip_depth) / 2
         
+        if avg_knee > 160:
+            quality_score = 0  # Standing still = no quality score yet
+            return "Ready to start", 0, avg_knee
+        
         if knee_diff > 15:
             quality_score -= 30
             return "Balance left and right", max(0, quality_score), avg_knee
@@ -549,7 +553,7 @@ class ExerciseFeedback:
             return False
         
         # FIXED: Enter bottom when knee angle drops below 100° (was 110°)
-        if avg_knee_angle < 100 and not self.in_bottom_position:
+        if avg_knee_angle < 105 and not self.in_bottom_position:
             self.in_bottom_position = True
             print(f"DEBUG: Entered bottom position at {avg_knee_angle:.1f}°")
         
