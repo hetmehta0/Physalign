@@ -1,11 +1,13 @@
 function SessionOverview() {
     return (
       <div style={{
-        background: "#fff",
+        backgroundColor: darkMode ? "#1e1e1e" : "#fff",
+        color: darkMode ? "#eee" : "#222",
         padding: "20px",
         borderRadius: "12px",
         border: "1px solid #eee",
-        marginBottom: "20px"
+        marginBottom: "20px",
+        
       }}>
         <h2 style={{ marginBottom: "12px" }}>Session Overview</h2>
   

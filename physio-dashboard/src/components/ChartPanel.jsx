@@ -1,16 +1,19 @@
-function ChartPanel() {
+function ChartPanel({ title, value, darkMode }) {
     return (
       <div style={{
         background: "#fff",
         padding: "20px",
         borderRadius: "12px",
-        border: "1px solid #eee"
+        border: "1px solid #eee",
+        backgroundColor: darkMode ? "#1e1e1e" : "#fff",
+        color: darkMode ? "#eee" : "#222",
       }}>
         <h3 style={{ marginBottom: "12px" }}>Session Graphs</h3>
   
         <div style={{
           height: "150px",
-          background: "#f0f0f0",
+          backgroundColor: darkMode ? "#1e1e1e" : "#fff",
+          color: darkMode ? "#eee" : "#222",
           borderRadius: "10px",
           border: "1px dashed #ccc",
           display: "flex",

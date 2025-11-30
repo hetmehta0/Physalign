@@ -1,11 +1,12 @@
 function PreSessionForm() {
     return (
       <div style={{
-        background: "#fff",
+        backgroundColor: darkMode ? "#1e1e1e" : "#fff",
+        color: darkMode ? "#eee" : "#222",
         padding: "20px",
         borderRadius: "12px",
         border: "1px solid #eee",
-        marginTop: "20px"
+        marginTop: "20px",
       }}>
         <h3 style={{ marginBottom: "12px" }}>Pre-Session Notes</h3>
   
