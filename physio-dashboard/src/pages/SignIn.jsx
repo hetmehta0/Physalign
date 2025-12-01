@@ -18,10 +18,24 @@ export default function SignIn({ setUser }) {
             alert("Wrong credentials"); // temporary feedback
         }
     }
-    return (<div className="signin-container">
-        <input type="text" value = {physioUserName} onChange={handleUserName} />
-        <input type="password" value = {physioUserPassword} onChange={handleUserPassword} />
-        <button onClick={handleSignIn}>Sign In</button>
-    </div>);
 
-}
+    return (
+        <div className="signin-container">
+        <div className="signin-card">
+            <input
+            type="text"
+            placeholder="Username"
+            value={physioUserName}
+            onChange={handleUserName}
+            />
+            <input
+            type="password"
+            placeholder="Password"
+            value={physioUserPassword}
+            onChange={handleUserPassword}
+            />
+            <button onClick={handleSignIn}>Sign In</button>
+        </div>
+        </div>
+    );
+    }
