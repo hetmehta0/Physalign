@@ -24,6 +24,12 @@
   background-color: #1e1e1e;
   border-color: #333;
 }
+.signin-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 
 .main {
   flex: 1;

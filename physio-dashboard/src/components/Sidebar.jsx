@@ -5,7 +5,6 @@ export default function Sidebar({ darkMode, setDarkMode, setCurrentView }) {
         <button onClick={() => setCurrentView("default")}>Dashboard</button>
         <button
             onClick={() => {
-              setSelectedPatient(null);   // wipe the old selection
               setCurrentView("patients"); // show the list
             }}
           >
