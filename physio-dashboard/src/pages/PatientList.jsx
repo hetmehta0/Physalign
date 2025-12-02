@@ -1,7 +1,21 @@
-const [selectedPatient, setSelectedPatient] = useState(null);
-const [patients] = useState([
-  { id: 1, name: "Alice" },
-  { id: 2, name: "Bob" },
-]);
+import { useState } from "react"; 
 
-<button onClick={() => setSelectedPatient(null)}>Back to Patient List</button>
+export default function PatientList({ patients, setSelectedPatient }) {
+  return (
+    <div className="page-container">
+      <h2>Patients</h2>
+      <div className="patient-list-grid">
+        {patients.map(p => (
+          <div 
+            key={p.id} 
+            className="patient-card"
+            onClick={() => setSelectedPatient(p)}
+          >
+            <div className="patient-card-header">{p.name}</div>
+            <div className="patient-card-info">Age: {p.age}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
