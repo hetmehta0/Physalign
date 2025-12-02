@@ -13,7 +13,7 @@ export default function SignIn({ setUser }) {
     }
     const handleSignIn = (event) => {
         if (physioUserName === "TheOne" && physioUserPassword === "Testing1") {
-            setCurrentView("patients");
+            setUser(true); // set user as logged in
         } else {
             alert("Wrong credentials"); // temporary feedback
         }
