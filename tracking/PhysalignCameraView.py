@@ -267,6 +267,7 @@ def draw_modern_ui(frame, exercise_name, rep_count, target_reps, quality, feedba
                cv.FONT_HERSHEY_SIMPLEX, 1.8, quality_color, 3, cv.LINE_AA)
     
     # Form quality bar
+    # TODO: Ensure it changes color based on quality and updates 
     cv.rectangle(frame, (25, 400), (175, 416), (224, 224, 224), -1)
     q_fill = int(150 * (quality / 100))
     cv.rectangle(frame, (25, 400), (25 + q_fill, 416), quality_color, -1)

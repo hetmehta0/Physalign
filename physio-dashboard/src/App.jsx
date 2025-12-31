@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import PatientList from "./pages/PatientList";
+import PatientList from "../../phsyalign-dashboard/app/patients/page.js";
+import "./app.css";
+import "../../phsyalign-dashboard/app/components/Sidebar.js"
+import SignIn from "../../phsyalign-dashboard/app/signin/page.js";
 
-import SignIn from "./pages/SignIn";
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
@@ -14,7 +16,12 @@ function App() {
     { id: 3, name: "Charlie Brown", age: 40 },
   ]);
   if (!loggedIn) {
-    return <SignIn setUser={() => setLoggedIn(true)} />;
+    return (
+      <SignIn
+        setIsLoggedIn={setLoggedIn}
+        setPhysioName={setUser}
+      />
+    );
   }
 
   if (!selectedPatient) {
@@ -22,5 +29,7 @@ function App() {
   }
 
   return <PatientTrends patient={selectedPatient} setSelectedPatient={setSelectedPatient} />;
+
+
 }
 export default App;
