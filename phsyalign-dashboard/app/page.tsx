@@ -1,27 +1,34 @@
 'use client'
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function Home() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    
-    if (isLoggedIn === 'true') {
-      // If logged in, go to patients page
-      router.push('/patients');
-    } else {
-      // If not logged in, go to sign in page
-      router.push('/signin');
-    }
+    // Check if user is authenticated
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        // If logged in, go to patients
+        router.push('/patients');
+      } else {
+        // If not logged in, go to sign in
+        router.push('/signin');
+      }
+      setLoading(false);
+    });
   }, [router]);
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50">
-      <p className="text-gray-600">Loading...</p>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
+  return null;
 }

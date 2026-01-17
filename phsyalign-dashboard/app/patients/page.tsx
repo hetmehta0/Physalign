@@ -1,43 +1,76 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Activity, Calendar, TrendingUp } from 'lucide-react';
+import { User, Activity, Calendar, TrendingUp, Plus } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import '../globals.css';
+import Sidebar from '../components/Sidebar';
 
-const mockPatients = [
-  { id: 1, name: "Sarah Mitchell", age: 34, lastVisit: "2024-12-18", status: "active", exercises: 5, compliance: 87 },
-  { id: 2, name: "James Chen", age: 56, lastVisit: "2024-12-19", status: "active", exercises: 7, compliance: 92 },
-  { id: 3, name: "Emma Rodriguez", age: 41, lastVisit: "2024-12-15", status: "review", exercises: 4, compliance: 63 },
-  { id: 4, name: "Michael O'Brien", age: 62, lastVisit: "2024-12-20", status: "active", exercises: 6, compliance: 78 },
-  { id: 5, name: "Lisa Patel", age: 29, lastVisit: "2024-12-17", status: "active", exercises: 8, compliance: 95 },
-];
+
+//Set Type 
+type Program = {
+  id: string;
+  physio_id: string;
+  access_code: string;
+  patient_name: string | null;
+  exercises: any[];
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  last_accessed: string | null;
+  expires_at: string | null;
+};
+
+
+
 
 export default function PatientList() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [patients] = useState(mockPatients);
+  const [programs, setPrograms] = useState<Program[]>([]); // Add type here
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const filteredPatients = patients.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => { 
+    async function fetchPrograms() {
+      const { data, error } = await supabase
+        .from('exercise_programs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching programs:', error);
+      } else {
+        setPrograms(data || []);
+      }
+      setLoading(false);
+    }
+    fetchPrograms();
+  }, []);
+
+  const filteredPrograms = programs.filter(p =>
+    p.patient_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getComplianceClass = (compliance: number) => {
-    if (compliance >= 80) return "compliance-high";
-    if (compliance >= 60) return "compliance-medium";
-    return "compliance-low";
-  };
-
-  const handleSelectPatient = (patient: any) => {
-    localStorage.setItem('selectedPatient', JSON.stringify(patient));
+  const handleSelectProgram = (program: any) => {
+    localStorage.setItem('selectedProgram', JSON.stringify(program));
     router.push('/trends');
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Loading programs...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
+      <Sidebar />
       <div className="page-header">
         <div className="header-content">
           <div>
-            <h1 className="header-title">Patient Dashboard</h1>
+            <h1 className="header-title">Exercise Programs</h1>
             <p className="header-subtitle">Welcome back, Dr. Sarah Johnson</p>
           </div>
           <div className="header-date">
@@ -47,66 +80,88 @@ export default function PatientList() {
       </div>
 
       <div className="content-wrapper">
-        <div className="search-wrapper">
-          <input
-            type="text"
-            placeholder="Search patients..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
+        <div className="flex justify-between items-center mb-6">
+          <div className="search-wrapper">
+            <input
+              type="text"
+              placeholder="Search programs..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          
+          <button
+            onClick={() => router.push('/createProgram')}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <Plus className="icon-sm" />
+            Create Program
+          </button>
         </div>
 
-        <div className="patient-grid">
-          {filteredPatients.map(patient => (
-            <div
-              key={patient.id}
-              onClick={() => handleSelectPatient(patient)}
-              className="patient-card"
-            >
-              <div className="patient-card-header">
-                <div className="patient-info">
-                  <div className="patient-avatar">
-                    <User className="icon-md" style={{ color: '#475569' }} />
+        {filteredPrograms.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No programs yet. Create your first one!</p>
+          </div>
+        ) : (
+          <div className="patient-grid">
+            {filteredPrograms.map(program => (
+              <div
+                key={program.id}
+                onClick={() => handleSelectProgram(program)}
+                className="patient-card"
+              >
+                <div className="patient-card-header">
+                  <div className="patient-info">
+                    <div className="patient-avatar">
+                      <User className="icon-md" style={{ color: '#475569' }} />
+                    </div>
+                    <div>
+                      <h3 className="patient-name">{program.patient_name || 'Unnamed Patient'}</h3>
+                      <p className="patient-age">Code: {program.access_code}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="patient-name">{patient.name}</h3>
-                    <p className="patient-age">{patient.age} years old</p>
-                  </div>
+                  <span className="status-badge status-active">
+                    Active
+                  </span>
                 </div>
-                <span className={`status-badge ${patient.status === 'active' ? 'status-active' : 'status-review'}`}>
-                  {patient.status}
-                </span>
-              </div>
 
-              <div className="patient-stats">
-                <div className="stat-row">
-                  <span className="stat-label">
-                    <Calendar className="icon-sm" />
-                    Last visit
-                  </span>
-                  <span className="stat-value">{patient.lastVisit}</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">
-                    <Activity className="icon-sm" />
-                    Exercises
-                  </span>
-                  <span className="stat-value">{patient.exercises} active</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">
-                    <TrendingUp className="icon-sm" />
-                    Compliance
-                  </span>
-                  <span className={getComplianceClass(patient.compliance)}>
-                    {patient.compliance}%
-                  </span>
+                <div className="patient-stats">
+                  <div className="stat-row">
+                    <span className="stat-label">
+                      <Calendar className="icon-sm" />
+                      Created
+                    </span>
+                    <span className="stat-value">
+                      {new Date(program.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">
+                      <Activity className="icon-sm" />
+                      Exercises
+                    </span>
+                    <span className="stat-value">
+                      {program.exercises?.length || 0} exercises
+                    </span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">
+                      <TrendingUp className="icon-sm" />
+                      Last Accessed
+                    </span>
+                    <span className="stat-value">
+                      {program.last_accessed 
+                        ? new Date(program.last_accessed).toLocaleDateString()
+                        : 'Never'}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

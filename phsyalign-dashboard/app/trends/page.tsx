@@ -1,206 +1,400 @@
-'use client'
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, User, Activity, TrendingUp, Clock, Edit2, Save, X } from 'lucide-react';
-import '../globals.css';
+import { 
+  ChevronLeft, 
+  Activity, 
+  TrendingUp, 
+  Clock, 
+  Edit2, 
+  Save, 
+  X, 
+  Plus,
+  Trash2
+} from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import '../legacy.css';
+import Sidebar from '../components/Sidebar';
 
-const mockExercises = [
-  { id: 1, name: "Shoulder External Rotation", sets: 3, reps: 12, notes: "Use resistance band", lastModified: "2024-12-18" },
-  { id: 2, name: "Hip Flexor Stretch", sets: 2, reps: 30, notes: "Hold 30 seconds each side", lastModified: "2024-12-15" },
-  { id: 3, name: "Single Leg Balance", sets: 3, reps: 45, notes: "Progress to eyes closed", lastModified: "2024-12-18" },
-  { id: 4, name: "Wall Squats", sets: 3, reps: 15, notes: "60 second holds", lastModified: "2024-12-12" },
-  { id: 5, name: "Calf Raises", sets: 3, reps: 20, notes: "Double leg, progress to single", lastModified: "2024-12-18" },
-];
+type Exercise = {
+  id?: number;
+  name: string;
+  sets: number;
+  reps: number;
+  notes: string;
+  lastModified?: string;
+};
+
+type Program = {
+  id: string;
+  physio_id: string;
+  access_code: string;
+  patient_name: string | null;
+  exercises: Exercise[];
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  last_accessed: string | null;
+  expires_at: string | null;
+};
 
 export default function PatientDetail() {
-  const [patient, setPatient] = useState<any>(null);
+  const [program, setProgram] = useState<Program | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [exercises, setExercises] = useState(mockExercises);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
-
+  const [isEditMode, setIsEditMode] = useState(false);
   useEffect(() => {
-    // Load patient from localStorage
-    const stored = localStorage.getItem('selectedPatient');
-    if (stored) {
-      setPatient(JSON.parse(stored));
+    async function loadProgram() {
+      // Get program from localStorage
+      const stored = localStorage.getItem('selectedProgram');
+      if (!stored) {
+        router.push('/physios');
+        return;
+      }
+
+      const storedProgram = JSON.parse(stored);
+
+      // Fetch fresh data from Supabase
+      const { data, error } = await supabase
+        .from('exercise_programs')
+        .select('*')
+        .eq('id', storedProgram.id)
+        .single();
+
+      if (error || !data) {
+        console.error('Error loading program:', error);
+        router.push('/physios');
+        return;
+      }
+
+      setProgram(data);
+      setExercises(data.exercises || []);
+      setLoading(false);
     }
-  }, []);
+
+    loadProgram();
+  }, [router]);
+  const handleAddExercise = () => {
+    const newExercise = {
+      name: '',
+      sets: 3,
+      reps: 10,
+      notes: ''
+    };
+    
+   
+    setExercises([...exercises, newExercise]);
+  };
+  const removeExercise = (index: number) => {
+    if (confirm('Are you sure you want to remove this exercise?')) {
+      setExercises(exercises.filter((_, i) => i !== index));
+    }
+  };
+
 
   const handleBack = () => {
-    router.push('/patients');
+    router.push('/physios');
   };
 
   const handleSave = async (id: number) => {
-    console.log('Saving:', exercises.find(e => e.id === id));
-    setEditingId(null);
-  };
+    if (!program) return;
 
+    try {
+      // Update the program in Supabase
+      const { error } = await supabase
+        .from('exercise_programs')
+        .update({
+          exercises: exercises,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', program.id);
+
+      if (error) throw error;
+
+      alert('Changes saved successfully!');
+      setEditingId(null);
+    } catch (error) {
+      console.error('Error saving:', error);
+      alert('Failed to save changes');
+    }
+  };
+  
+  const handleSaveProgram = async () => {
+    if (!program) return;
+
+    try {
+      // Remove any exercises that have no name
+      const validExercises = exercises.filter(ex => ex.name.trim() !== '');
+      
+      if (validExercises.length === 0) {
+        alert('Add at least one exercise!');
+        return;
+      }
+
+      // Update in Supabase
+      const { error } = await supabase
+        .from('exercise_programs')
+        .update({
+          exercises: validExercises,  // Save the array
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', program.id);  // Only update THIS program
+
+      if (error) throw error;
+
+      // Update local state
+      setExercises(validExercises);
+      setIsEditMode(false);
+      alert('Saved!');
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to save');
+    }
+  };
   const handleCancel = () => {
-    setExercises(mockExercises);
+    // Reload from program data
+    if (program && program.exercises) {
+      setExercises(program.exercises);
+    }
     setEditingId(null);
   };
 
-  const updateExercise = (id: number, field: string, value: any) => {
+  const updateExercise = (id: number, field: string, value: string | number) => {
     setExercises(prev =>
-      prev.map(ex => ex.id === id ? { ...ex, [field]: value } : ex)
+      prev.map((ex, index) => index === id ? { ...ex, [field]: value } : ex)
     );
   };
 
-  const getComplianceClass = (compliance: number) => {
-    if (compliance >= 80) return "compliance-high";
-    if (compliance >= 60) return "compliance-medium";
-    return "compliance-low";
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase();
   };
 
-  if (!patient) {
+  if (loading) {
     return (
-      <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ color: '#475569' }}>Loading patient data...</p>
-        </div>
+      <div className="app-container flex items-center justify-center min-h-screen">
+        <p className="text-gray-600">Loading program data...</p>
       </div>
     );
   }
 
-  return (
-    <div className="app-container">
-      <div className="page-header">
-        <div className="header-content" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-          <button onClick={handleBack} className="back-button">
-            <ChevronLeft className="icon-sm" />
-            Back to patients
-          </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div className="patient-avatar" style={{ width: '3.5rem', height: '3.5rem', backgroundColor: '#475569' }}>
-              <User className="icon-lg" style={{ color: '#cbd5e1' }} />
-            </div>
-            <div>
-              <h1 className="header-title" style={{ fontSize: '1.5rem' }}>{patient.name}</h1>
-              <p className="header-subtitle">{patient.age} years old • Last visit: {patient.lastVisit}</p>
-            </div>
+  if (!program) {
+    return (
+      <div className="app-container flex items-center justify-center min-h-screen">
+        <p className="text-gray-600">Program not found</p>
+      </div>
+    );
+  }
+return (
+  <div className="app-container">
+    <Sidebar />
+    
+    <header className="patient-header">
+      <div className="patient-header-content">
+        <button onClick={() => router.push('/patients')} className="back-button">
+          <ChevronLeft className="icon-sm" />
+          Back to programs
+          router.push('/patients')
+        </button>          
+        <div className="patient-header-main">
+          <div className="patient-header-avatar">
+            {program.patient_name ? getInitials(program.patient_name) : 'UN'}
+          </div>
+          <div className="patient-header-info">
+            <h1 className="patient-header-name">
+              {program.patient_name || 'Unnamed Patient'}
+            </h1>
+            <p className="patient-header-meta">
+              Code: {program.access_code} • Created: {new Date(program.created_at).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main className="content-wrapper">
+      {/* Stats Grid */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-card-header">
+            <span className="stat-card-label">Total Exercises</span>
+            <Activity className="icon-sm" style={{ color: '#94a3b8' }} />
+          </div>
+          <div className="stat-card-value compliance-high">
+            {exercises.length}
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-card-header">
+            <span className="stat-card-label">Access Code</span>
+            <TrendingUp className="icon-sm" style={{ color: '#94a3b8' }} />
+          </div>
+          <div className="stat-card-value" style={{ fontSize: '1.5rem' }}>
+            {program.access_code}
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-card-header">
+            <span className="stat-card-label">Last Accessed</span>
+            <Clock className="icon-sm" style={{ color: '#94a3b8' }} />
+          </div>
+          <div className="stat-card-value" style={{ fontSize: '1rem' }}>
+            {program.last_accessed 
+              ? new Date(program.last_accessed).toLocaleDateString()
+              : 'Never'}
           </div>
         </div>
       </div>
 
-      <div className="content-wrapper" style={{ paddingTop: '1.5rem' }}>
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-card-header">
-              <span className="stat-card-label">Active Exercises</span>
-              <Activity className="icon-sm" style={{ color: '#94a3b8' }} />
+      {/* Exercise Program */}
+      <section className="exercise-section">
+        {/* Header with Edit/Save buttons */}
+        <div className="exercise-header">
+          <h2 className="exercise-title">Exercise Program</h2>
+          {!isEditMode ? (
+            <button
+              onClick={() => setIsEditMode(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              <Edit2 className="w-4 h-4" />
+              Edit Program
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveProgram}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                <Save className="w-4 h-4" />
+                Save Changes
+              </button>
+              <button
+                onClick={() => {
+                  setExercises(program?.exercises || []);
+                  setIsEditMode(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+              >
+                <X className="w-4 h-4" />
+                Cancel
+              </button>
             </div>
-            <div className="stat-card-value">{patient.exercises}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card-header">
-              <span className="stat-card-label">Compliance Rate</span>
-              <TrendingUp className="icon-sm" style={{ color: '#94a3b8' }} />
-            </div>
-            <div className={`stat-card-value ${getComplianceClass(patient.compliance)}`}>
-              {patient.compliance}%
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card-header">
-              <span className="stat-card-label">Days Since Visit</span>
-              <Clock className="icon-sm" style={{ color: '#94a3b8' }} />
-            </div>
-            <div className="stat-card-value">3</div>
-          </div>
+          )}
         </div>
 
-        <div className="exercise-section">
-          <div className="exercise-header">
-            <h2 className="exercise-title">Exercise Program</h2>
-          </div>
-          <div className="exercise-list">
-            {exercises.map((exercise) => {
-              const isEditing = editingId === exercise.id;
-              return (
-                <div key={exercise.id} className="exercise-item">
-                  <div className="exercise-content">
-                    <div className="exercise-details">
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={exercise.name}
-                          onChange={(e) => updateExercise(exercise.id, 'name', e.target.value)}
-                          className="exercise-name-input"
-                        />
-                      ) : (
-                        <h3 className="exercise-name">{exercise.name}</h3>
-                      )}
-                      
-                      <div className="exercise-params">
-                        <div className="param-group">
-                          <label className="exercise-notes-label">Sets</label>
-                          {isEditing ? (
-                            <input
-                              type="number"
-                              value={exercise.sets}
-                              onChange={(e) => updateExercise(exercise.id, 'sets', parseInt(e.target.value))}
-                              className="param-input"
-                            />
-                          ) : (
-                            <span className="param-value">{exercise.sets}</span>
-                          )}
-                        </div>
-                        <div className="param-group">
-                          <label className="exercise-notes-label">Reps</label>
-                          {isEditing ? (
-                            <input
-                              type="number"
-                              value={exercise.reps}
-                              onChange={(e) => updateExercise(exercise.id, 'reps', parseInt(e.target.value))}
-                              className="param-input"
-                            />
-                          ) : (
-                            <span className="param-value">{exercise.reps}</span>
-                          )}
-                        </div>
-                      </div>
+        {/* Add Exercise button (only in edit mode) */}
+        {isEditMode && (
+          <button
+            onClick={handleAddExercise}
+            className="flex items-center gap-2 px-4 py-2 mb-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4" />
+            Add Exercise
+          </button>
+        )}
 
-                      <div>
-                        <label className="exercise-notes-label">Notes</label>
-                        {isEditing ? (
-                          <textarea
-                            value={exercise.notes}
-                            onChange={(e) => updateExercise(exercise.id, 'notes', e.target.value)}
-                            className="exercise-notes-input"
-                            rows={2}
+        {/* Exercise List */}
+        {exercises.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No exercises in this program yet.</p>
+          </div>
+        ) : (
+          <div className="exercise-list">
+            {exercises.map((exercise, index) => (
+              <article key={index} className="exercise-item">
+                <div className="exercise-content">
+                  <div className="exercise-details">
+                    {/* Exercise Name */}
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={exercise.name}
+                        onChange={(e) => updateExercise(index, 'name', e.target.value)}
+                        className="exercise-name-input"
+                        placeholder="Exercise name"
+                      />
+                    ) : (
+                      <h3 className="exercise-name">{exercise.name}</h3>
+                    )}
+
+                    {/* Sets & Reps */}
+                    <div className="exercise-params">
+                      <div className="param-group">
+                        <label className="exercise-notes-label">Sets</label>
+                        {isEditMode ? (
+                          <input
+                            type="number"
+                            value={exercise.sets}
+                            onChange={(e) => updateExercise(index, 'sets', parseInt(e.target.value) || 0)}
+                            className="param-input"
                           />
                         ) : (
-                          <p className="exercise-notes">{exercise.notes}</p>
+                          <span className="param-value">{exercise.sets}</span>
                         )}
                       </div>
-
-                      <p className="exercise-modified">Last modified: {exercise.lastModified}</p>
+                      <div className="param-group">
+                        <label className="exercise-notes-label">Reps</label>
+                        {isEditMode ? (
+                          <input
+                            type="number"
+                            value={exercise.reps}
+                            onChange={(e) => updateExercise(index, 'reps', parseInt(e.target.value) || 0)}
+                            className="param-input"
+                          />
+                        ) : (
+                          <span className="param-value">{exercise.reps}</span>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="exercise-actions">
-                      {isEditing ? (
-                        <>
-                          <button onClick={() => handleSave(exercise.id)} className="icon-button icon-button-save">
-                            <Save className="icon-sm" />
-                          </button>
-                          <button onClick={handleCancel} className="icon-button icon-button-cancel">
-                            <X className="icon-sm" />
-                          </button>
-                        </>
+                    {/* Notes */}
+                    <div>
+                      <label className="exercise-notes-label">Notes</label>
+                      {isEditMode ? (
+                        <textarea
+                          value={exercise.notes}
+                          onChange={(e) => updateExercise(index, 'notes', e.target.value)}
+                          className="exercise-notes-input"
+                          rows={2}
+                          placeholder="Exercise notes"
+                        />
                       ) : (
-                        <button onClick={() => setEditingId(exercise.id)} className="icon-button icon-button-edit">
-                          <Edit2 className="icon-sm" />
-                        </button>
+                        <p className="exercise-notes">{exercise.notes || 'No notes'}</p>
                       )}
                     </div>
+
+                    {/* Last Modified */}
+                    <p className="exercise-modified">
+                      Last modified: {new Date(program.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+
+                  {/* Actions - Delete button in edit mode */}
+                  <div className="exercise-actions">
+                    {isEditMode && (
+                      <button
+                        onClick={() => removeExercise(index)}
+                        className="icon-button icon-button-cancel"
+                        title="Delete Exercise"
+                      >
+                        <Trash2 className="icon-sm" />
+                      </button>
+                    )}
                   </div>
                 </div>
-              );
-            })}
+              </article>
+            ))}
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+        )}
+      </section>
+    </main>
+  </div>
+)};
