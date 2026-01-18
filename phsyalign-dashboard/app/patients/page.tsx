@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Activity, Calendar, TrendingUp, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import '../globals.css';
+import '../legacy.css';
 import Sidebar from '../components/Sidebar';
 
 

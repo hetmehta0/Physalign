@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import '../globals.css';
+import '../legacy.css';
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
