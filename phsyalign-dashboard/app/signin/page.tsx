@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import '../legacy.css';
+
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -17,23 +17,17 @@ export default function SignIn() {
       setLoading(true);
       setError("");
 
-      console.log('Attempting sign in...'); // Debug log
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log('Sign in response:', { data, error }); // Debug logcbc
-
       if (error) {
-        console.error('Sign in error:', error); // Debug log
         setError(error.message);
         setLoading(false);
       } else {
-        console.log('Sign in successful, redirecting...'); // Debug log
         router.push('/patients');
-        router.refresh(); // Force a refresh
+        router.refresh();
       }
     } catch (err) {
       console.error('Unexpected error:', err);

@@ -24,7 +24,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
+      <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
         <p className="text-gray-600">Loading...</p>
       </div>
     );

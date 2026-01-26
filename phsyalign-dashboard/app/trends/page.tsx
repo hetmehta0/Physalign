@@ -14,30 +14,9 @@ import {
   Trash2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import '../legacy.css';
-import Sidebar from '../components/Sidebar';
+import { Exercise, Program } from '@/lib/types';
+import { useToast } from '@/app/components/useToast';
 
-type Exercise = {
-  id?: number;
-  name: string;
-  sets: number;
-  reps: number;
-  notes: string;
-  lastModified?: string;
-};
-
-type Program = {
-  id: string;
-  physio_id: string;
-  access_code: string;
-  patient_name: string | null;
-  exercises: Exercise[];
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-  last_accessed: string | null;
-  expires_at: string | null;
-};
 
 export default function PatientDetail() {
   const [program, setProgram] = useState<Program | null>(null);
@@ -46,18 +25,33 @@ export default function PatientDetail() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [isEditMode, setIsEditMode] = useState(false);
+  const { success, error, ToastContainer } = useToast();
   useEffect(() => {
     async function loadProgram() {
-      // Get program from localStorage
-      const stored = localStorage.getItem('selectedProgram');
-      if (!stored) {
-        router.push('/physios');
+      // Check authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        setLoading(false);
         return;
       }
 
+      if (!session) {
+        router.push('/signin');
+        return;
+      }
+
+      // Get program from localStorage
+      const stored = localStorage.getItem('selectedProgram');
+      if (!stored) {
+        router.push('/patients');
+        return;
+      }
+
+      // Note: localStorage data is untrusted. Always validate against server.
       const storedProgram = JSON.parse(stored);
 
-      // Fetch fresh data from Supabase
+      // Fetch fresh data from Supabase to validate and get latest state
       const { data, error } = await supabase
         .from('exercise_programs')
         .select('*')
@@ -65,8 +59,13 @@ export default function PatientDetail() {
         .single();
 
       if (error || !data) {
-        console.error('Error loading program:', error);
-        router.push('/physios');
+        router.push('/patients');
+        return;
+      }
+
+      // Authorization: Ensure the logged-in physio owns this program
+      if (data.physio_id !== session.user.id) {
+        router.push('/patients');
         return;
       }
 
@@ -91,12 +90,13 @@ export default function PatientDetail() {
   const removeExercise = (index: number) => {
     if (confirm('Are you sure you want to remove this exercise?')) {
       setExercises(exercises.filter((_, i) => i !== index));
+      success('Exercise removed');
     }
   };
 
 
   const handleBack = () => {
-    router.push('/physios');
+    router.push('/patients');
   };
 
   const handleSave = async (id: number) => {
@@ -104,7 +104,7 @@ export default function PatientDetail() {
 
     try {
       // Update the program in Supabase
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('exercise_programs')
         .update({
           exercises: exercises,
@@ -112,13 +112,12 @@ export default function PatientDetail() {
         })
         .eq('id', program.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
-      alert('Changes saved successfully!');
+      success('Changes saved successfully!');
       setEditingId(null);
-    } catch (error) {
-      console.error('Error saving:', error);
-      alert('Failed to save changes');
+    } catch (err) {
+      error('Failed to save changes');
     }
   };
   
@@ -130,28 +129,27 @@ export default function PatientDetail() {
       const validExercises = exercises.filter(ex => ex.name.trim() !== '');
       
       if (validExercises.length === 0) {
-        alert('Add at least one exercise!');
+        error('Add at least one exercise!');
         return;
       }
 
       // Update in Supabase
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('exercise_programs')
         .update({
-          exercises: validExercises,  // Save the array
+          exercises: validExercises,
           updated_at: new Date().toISOString()
         })
-        .eq('id', program.id);  // Only update THIS program
+        .eq('id', program.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
       // Update local state
       setExercises(validExercises);
       setIsEditMode(false);
-      alert('Saved!');
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Failed to save');
+      success('Program saved successfully!');
+    } catch (err) {
+      error('Failed to save program');
     }
   };
   const handleCancel = () => {
@@ -178,7 +176,7 @@ export default function PatientDetail() {
 
   if (loading) {
     return (
-      <div className="app-container flex items-center justify-center min-h-screen">
+      <div className="min-h-screen w-full flex items-center justify-center">
         <p className="text-gray-600">Loading program data...</p>
       </div>
     );
@@ -186,21 +184,19 @@ export default function PatientDetail() {
 
   if (!program) {
     return (
-      <div className="app-container flex items-center justify-center min-h-screen">
+      <div className="min-h-screen w-full flex items-center justify-center">
         <p className="text-gray-600">Program not found</p>
       </div>
     );
   }
 return (
   <div className="app-container">
-    <Sidebar />
-    
+    <ToastContainer />
     <header className="patient-header">
       <div className="patient-header-content">
         <button onClick={() => router.push('/patients')} className="back-button">
           <ChevronLeft className="icon-sm" />
           Back to programs
-          router.push('/patients')
         </button>          
         <div className="patient-header-main">
           <div className="patient-header-avatar">
@@ -309,7 +305,7 @@ return (
         ) : (
           <div className="exercise-list">
             {exercises.map((exercise, index) => (
-              <article key={index} className="exercise-item">
+              <article key={index} className={`exercise-item ${isEditMode ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''}`}>
                 <div className="exercise-content">
                   <div className="exercise-details">
                     {/* Exercise Name */}
@@ -335,6 +331,7 @@ return (
                             value={exercise.sets}
                             onChange={(e) => updateExercise(index, 'sets', parseInt(e.target.value) || 0)}
                             className="param-input"
+                            disabled={false}
                           />
                         ) : (
                           <span className="param-value">{exercise.sets}</span>
@@ -348,6 +345,7 @@ return (
                             value={exercise.reps}
                             onChange={(e) => updateExercise(index, 'reps', parseInt(e.target.value) || 0)}
                             className="param-input"
+                            disabled={false}
                           />
                         ) : (
                           <span className="param-value">{exercise.reps}</span>
@@ -365,6 +363,7 @@ return (
                           className="exercise-notes-input"
                           rows={2}
                           placeholder="Exercise notes"
+                          disabled={false}
                         />
                       ) : (
                         <p className="exercise-notes">{exercise.notes || 'No notes'}</p>
