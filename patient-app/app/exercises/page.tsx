@@ -32,7 +32,15 @@ export default function ExerciseList() {
       return;
     }
 
-    setProgram(JSON.parse(storedProgram));
+    try {
+      // Safely parse the program data
+      const parsedProgram = JSON.parse(storedProgram);
+      setProgram(parsedProgram);
+    } catch (error) {
+      console.error('Error parsing program data:', error);
+      console.log('Stored program data:', storedProgram); // Log the raw data for debugging
+      router.push('/');
+    }
   }, [router]);
 
   const handleStartExercise = (index: number) => {

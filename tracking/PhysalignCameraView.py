@@ -661,9 +661,62 @@ class ExerciseFeedback:
 # ============================================
 
 def main():
-    # SELECT EXERCISE
-    exercise_key = "squat"  # Options: "squat", "squat_front", "shoulder_raise"
-    exercise_config = EXERCISE_LIBRARY[exercise_key]
+    # API Configuration
+    API_BASE_URL = "http://localhost:8000"
+    
+    print("\n" + "="*50)
+    print("PHYSALIGN - Patient Login")
+    print("="*50)
+    access_code = input("Enter your 8-digit access code (or press Enter for demo): ").strip().upper()
+    
+    exercise_config = None
+    if access_code:
+        try:
+            print(f"Fetching program for code: {access_code}...")
+            response = requests.get(f"{API_BASE_URL}/api/program/{access_code}")
+            if response.status_code == 200:
+                program_data = response.json()
+                print(f"✅ Welcome, {program_data.get('patient_name', 'Patient')}!")
+                
+                # Let user choose exercise if multiple
+                exercises = program_data.get('exercises', [])
+                if exercises:
+                    print("\nYour assigned exercises:")
+                    for i, ex in enumerate(exercises):
+                        print(f"{i+1}. {ex['name']} ({ex['sets']}x{ex['reps']})")
+                    
+                    choice = input("\nSelect exercise number (1): ").strip()
+                    choice = int(choice) - 1 if choice else 0
+                    selected_ex = exercises[choice]
+                    
+                    # Map to library key or create config
+                    exercise_config = {
+                        "name": selected_ex['name'],
+                        "camera_angle": "side", # Default
+                        "tracking_mode": "single_side",
+                        "primary_joints": ["left_knee", "left_hip"], # Default
+                        "analysis_function": "analyze_squat_side", # Default
+                        "reps_target": selected_ex['reps'],
+                        "record_video": True
+                    }
+                    
+                    # Try to find better match in library
+                    for key, cfg in EXERCISE_LIBRARY.items():
+                        if cfg['name'].lower() in selected_ex['name'].lower():
+                            exercise_config.update(cfg)
+                            exercise_config['reps_target'] = selected_ex['reps']
+                            break
+                else:
+                    print("❌ No exercises found in your program.")
+            else:
+                print(f"❌ Error: {response.json().get('detail', 'Unknown error')}")
+        except Exception as e:
+            print(f"⚠️ Could not connect to API: {e}")
+    
+    if not exercise_config:
+        print("Using demo mode (Squats)...")
+        exercise_key = "squat"
+        exercise_config = EXERCISE_LIBRARY[exercise_key]
     
     # Initialize (VERTICAL orientation)
     cap = cv.VideoCapture(0)
@@ -780,6 +833,33 @@ def main():
         else:
             print(f"\n📈 Data saved for review")
         
+        # POST to API
+        if access_code:
+            try:
+                print("\n📤 Syncing data with dashboard...")
+                payload = {
+                    "access_code": access_code,
+                    "exercise_name": exercise_config['name'],
+                    "rep_count": summary['reps_completed'],
+                    "target_reps": exercise_config['reps_target'],
+                    "duration_seconds": summary['duration_seconds'],
+                    "average_quality": summary['average_quality'],
+                    "rpe": summary['rpe'],
+                    "video_url": "patient_session.mp4", # Local path or placeholder
+                    "metrics": {
+                        "average_tempo": summary['average_tempo'],
+                        "quality_per_rep": summary['quality_per_rep'],
+                        "tempo_per_rep": summary['tempo_per_rep']
+                    }
+                }
+                res = requests.post(f"{API_BASE_URL}/api/sessions", json=payload)
+                if res.status_code == 200:
+                    print("✅ Session synced successfully!")
+                else:
+                    print(f"❌ Sync failed: {res.text}")
+            except Exception as e:
+                print(f"⚠️ Could not sync with API: {e}")
+
         print(f"\n💬 Your physiotherapist will review within 24h")
     
     print("\n" + "="*50)

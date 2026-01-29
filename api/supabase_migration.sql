@@ -1,3 +1,15 @@
+-- Create exercise_programs table to store exercise programs
+CREATE TABLE IF NOT EXISTS exercise_programs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    physio_id UUID NOT NULL,
+    access_code TEXT UNIQUE NOT NULL,
+    patient_name TEXT,
+    exercises JSONB NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    last_accessed TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Create exercise_sessions table to store tracking data
 CREATE TABLE IF NOT EXISTS exercise_sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -50,6 +62,9 @@ CREATE POLICY "Anyone with access code can create sessions"
 
 -- Add comment
 COMMENT ON TABLE exercise_sessions IS 'Stores completed exercise sessions from tracking system';
+
+-- Ensure access_code index on programs table
+CREATE INDEX IF NOT EXISTS idx_programs_access_code ON exercise_programs(access_code);
 
 -- Create storage bucket for exercise videos
 INSERT INTO storage.buckets (id, name, public)

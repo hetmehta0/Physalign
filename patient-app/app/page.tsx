@@ -24,9 +24,10 @@ export default function AccessCodeEntry() {
 
       const data = await response.json();
       
-      // Store program in sessionStorage
+      // Store program in sessionStorage (API returns program data directly, not wrapped in 'data' object)
       sessionStorage.setItem('accessCode', accessCode);
-      sessionStorage.setItem('program', JSON.stringify(data.program));
+      // Clean and stringify the data to avoid parsing issues
+      sessionStorage.setItem('program', JSON.stringify(data));
       
       // Navigate to exercises page
       router.push('/exercises');
@@ -59,10 +60,10 @@ export default function AccessCodeEntry() {
                 id="accessCode"
                 type="text"
                 value={accessCode}
-                onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-                placeholder="ABC123XY"
+                onChange={(e) => setAccessCode(e.target.value)}
+                placeholder="abc123xy"
                 maxLength={8}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl font-mono tracking-wider focus:ring-2 focus:ring-teal-500 focus:border-transparent uppercase"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl font-mono tracking-wider focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                 required
               />
             </div>
