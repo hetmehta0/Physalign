@@ -14,6 +14,8 @@ interface ExerciseState {
   tiredness: number;
   tempo: string;
   landmarks: PoseLandmarks;
+  fatigueLevel?: number;
+  fatigueNotes?: string;
 }
 
 const PoseTracker: React.FC<{
@@ -37,6 +39,8 @@ const PoseTracker: React.FC<{
     tiredness: 0,
     tempo: 'Good pace',
     landmarks: {} as PoseLandmarks,
+    fatigueLevel: undefined,
+    fatigueNotes: '',
     lastRepTime: Date.now(),
     inBottomPosition: false,
     repHistory: [] as number[],
@@ -478,7 +482,9 @@ const PoseTracker: React.FC<{
           stressLevel: 0, // We could add face tracking later
           tiredness,
           tempo: currentState.tempo,
-          landmarks
+          landmarks,
+          fatigueLevel: currentState.fatigueLevel,
+          fatigueNotes: currentState.fatigueNotes
         });
       }
     } catch (error) {

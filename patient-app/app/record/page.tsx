@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import PoseTracker from '@/app/components/PoseTracker';
+import FatigueRating from '@/app/components/FatigueRating';
 
 interface Exercise {
   name: string;
@@ -35,7 +36,9 @@ export default function RecordExercise() {
     stressLevel: 0,
     tiredness: 0,
     tempo: 'Good pace',
-    landmarks: {}
+    landmarks: {},
+    fatigueLevel: 5,
+    fatigueNotes: ''
   });
   const [sessionMetrics, setSessionMetrics] = useState<any[]>([]);
   const [useRearCamera, setUseRearCamera] = useState(false);
@@ -124,7 +127,9 @@ export default function RecordExercise() {
       stressLevel: 0,
       tiredness: 0,
       tempo: 'Good pace',
-      landmarks: {}
+      landmarks: {},
+      fatigueLevel: 5,
+      fatigueNotes: ''
     });
     const mediaRecorder = new MediaRecorder(streamRef.current, {
       mimeType: 'video/webm;codecs=vp8,opus'
@@ -175,7 +180,9 @@ export default function RecordExercise() {
           stressLevel: state.stressLevel,
           tiredness: state.tiredness,
           tempo: state.tempo,
-          landmarks: state.landmarks
+          landmarks: state.landmarks,
+          fatigueLevel: state.fatigueLevel,
+          fatigueNotes: state.fatigueNotes
         }
       ]);
     } else if (state.repCount > 0 && sessionMetrics.length > 0) {
@@ -194,11 +201,21 @@ export default function RecordExercise() {
             stressLevel: state.stressLevel,
             tiredness: state.tiredness,
             tempo: state.tempo,
-            landmarks: state.landmarks
+            landmarks: state.landmarks,
+            fatigueLevel: state.fatigueLevel,
+            fatigueNotes: state.fatigueNotes
           }
         ]);
       }
     }
+  };
+
+  const handleFatigueChange = (level: number, notes: string) => {
+    setExerciseState(prev => ({
+      ...prev,
+      fatigueLevel: level,
+      fatigueNotes: notes
+    }));
   };
   
   const submitRecording = async () => {
@@ -246,7 +263,9 @@ export default function RecordExercise() {
           target_reps: exercise.reps * exercise.sets,
           completion_percentage: Math.min(100, (exerciseState.repCount / (exercise.reps * exercise.sets)) * 100),
           video_url: videoUrl,
-          metrics: sessionMetrics
+          metrics: sessionMetrics,
+          fatigue_level: exerciseState.fatigueLevel,
+          fatigue_notes: exerciseState.fatigueNotes
         })
       });
   

@@ -61,8 +61,8 @@ export default function AccessCodeEntry() {
                 type="text"
                 value={accessCode}
                 onChange={(e) => setAccessCode(e.target.value)}
-                placeholder="abc123xy"
-                maxLength={8}
+                placeholder="abc123x"
+                maxLength={7}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl font-mono tracking-wider focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                 required
               />
@@ -76,7 +76,7 @@ export default function AccessCodeEntry() {
 
             <button
               type="submit"
-              disabled={loading || accessCode.length < 8}
+              disabled={loading || accessCode.length < 7}
               className="w-full py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Verifying...' : 'Continue'}
