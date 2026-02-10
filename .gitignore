@@ -1,0 +1,146 @@
+# System files
+.DS_Store
+*.swp
+*.swo
+~*
+.*.sw[op]
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+.nuxt/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.vercel/
+.well-known/acme-challenge/
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+._*
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Temporary folders
+tmp/
+temp/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+api/physalign_api_env/
+
+# Supabase
+.supabase/
+
+# Flutter
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Bun cache
+.bun/
+
+# User-specific files
+.bash_history
+.bash_profile
+.bashrc
+.zsh_history
+.zshrc
+.ssh/
+.aws/
+.azure/
+.gcp/
+.docker/config.json
+
+# System cache
+*/.cache/
+*/node_modules/
+*/__pycache__/
+*bun/install/cache/*
+
+# Media files (large files)
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.mp3
+*.wav
+*.flac
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Lock files (except package-lock.json in some cases)
+*yarn.lock
+*pnpm-lock.yaml
+*bun.lockb
