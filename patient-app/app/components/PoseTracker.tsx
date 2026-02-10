@@ -14,8 +14,8 @@ interface ExerciseState {
   tiredness: number;
   tempo: string;
   landmarks: PoseLandmarks;
-  fatigueLevel?: number;
-  fatigueNotes?: string;
+  fatigueLevel: number;
+  fatigueNotes: string;
 }
 
 const PoseTracker: React.FC<{
@@ -39,7 +39,7 @@ const PoseTracker: React.FC<{
     tiredness: 0,
     tempo: 'Good pace',
     landmarks: {} as PoseLandmarks,
-    fatigueLevel: undefined,
+    fatigueLevel: 0,
     fatigueNotes: '',
     lastRepTime: Date.now(),
     inBottomPosition: false,

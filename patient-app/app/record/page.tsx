@@ -21,8 +21,8 @@ interface ExerciseState {
   tiredness: number;
   tempo: string;
   landmarks: { [key: string]: { x: number; y: number; z?: number } };
-  fatigueLevel?: number;
-  fatigueNotes?: string;
+  fatigueLevel: number;
+  fatigueNotes: string;
 }
 
 export default function RecordExercise() {
@@ -204,8 +204,8 @@ export default function RecordExercise() {
             tiredness: state.tiredness,
             tempo: state.tempo,
             landmarks: state.landmarks,
-            fatigueLevel: state.fatigueLevel,
-            fatigueNotes: state.fatigueNotes
+            fatigueLevel: state.fatigueLevel ?? 0,
+            fatigueNotes: state.fatigueNotes ?? ''
           }
         ]);
       }
@@ -266,8 +266,8 @@ export default function RecordExercise() {
           completion_percentage: Math.min(100, (exerciseState.repCount / (exercise.reps * exercise.sets)) * 100),
           video_url: videoUrl,
           metrics: sessionMetrics,
-          fatigue_level: exerciseState.fatigueLevel,
-          fatigue_notes: exerciseState.fatigueNotes
+          fatigue_level: exerciseState.fatigueLevel ?? 0,
+          fatigue_notes: exerciseState.fatigueNotes ?? ''
         })
       });
   
