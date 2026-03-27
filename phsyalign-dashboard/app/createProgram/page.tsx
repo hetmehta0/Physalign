@@ -7,6 +7,7 @@ import { Exercise } from '@/lib/types';
 import { generateAccessCode } from '@/lib/utils';
 import { useToast } from '@/app/components/useToast';
 
+
 export default function CreateProgram() {
   const [patientName, setPatientName] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([
@@ -56,7 +57,7 @@ export default function CreateProgram() {
         // Generate patient access code 
         const accessCode = generateAccessCode(8);
 
-        // Create program in database 
+        // Create program in database lol
         const { data, error: createError } = await supabase
             .from('exercise_programs')
             .insert([{
